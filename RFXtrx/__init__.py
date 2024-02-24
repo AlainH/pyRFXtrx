@@ -911,6 +911,7 @@ class PyNetworkTransport(RFXtrxTransport):
     def close(self):
         """ close connection to rfxtrx device """
         self._run_event.clear()
+        self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
 
 
@@ -937,7 +938,7 @@ class DummyTransport(RFXtrxTransport):
         """ Emulate a receive by parsing the given data """
         return self.receive(data)
 
-    def send(self, data):  # pylint: disable=R0201
+    def send(self, data):
         """ Emulate a send by doing nothing (except printing debug info if
             requested) """
         pkt = bytearray(data)

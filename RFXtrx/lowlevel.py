@@ -2264,7 +2264,7 @@ class Cartelectronic(SensorPacket):
                 self.currentwatt = None
             self.state_byte = data[20]
             self.teleinfo_ok = not (data[20] & 0x04) == 0x04
-            self.rssi_byte = data[17]
+            self.rssi_byte = data[21]
         elif self.subtype == 0x02:
             # Cartelectronic Encoder
             self.counter1 = ((data[8] * pow(2, 24)) + (data[9] << 16) +
@@ -2554,6 +2554,7 @@ class Rfy(Packet):
     COMMANDS = {0x00: 'Stop',
                 0x01: 'Up',
                 0x03: 'Down',
+                0x07: 'Program',
                 0x0F: '0.5 Seconds Up',
                 0x10: '0.5 Seconds Down',
                 0x11: '2 Seconds Up',
@@ -2568,12 +2569,13 @@ class Rfy(Packet):
         return self.__str__()
 
     def __str__(self):
-        return "Rfy [subtype={0}, seqnbr={1}, id={2}, cmnd={3}]" \
+        return "Rfy [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, rssi={4}]" \
             .format(
                 self.subtype,
                 self.seqnbr,
                 self.id_string,
-                self.cmnd_string
+                self.cmnd_string,
+                self.rssi
             )
 
     def __init__(self):
@@ -2586,6 +2588,9 @@ class Rfy(Packet):
         self.unitcode = None
         self.cmnd = None
         self.cmnd_string = None
+        self.rfu1 = None
+        self.rfu2 = None
+        self.rfu3 = None
 
     def parse_id(self, subtype, id_string):
         """( a string id into individual components"""
@@ -2613,16 +2618,26 @@ class Rfy(Packet):
         self.id1 = data[4]
         self.id2 = data[5]
         self.id3 = data[6]
+        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
         self.unitcode = data[7]
-        if self.packetlength > 7:
+
+        # Packet without command has been used in home assistant
+        if self.packetlength >= 8:
             self.cmnd = data[8]
 
-        self.id_combined = (self.id1 << 16) + (self.id2 << 8) + self.id3
+        # Packet was extended in 9.17
+        if self.packetlength >= 12:
+            self.rfu1 = data[9]
+            self.rfu2 = data[10]
+            self.rfu3 = data[11]
+            self.rssi_byte = data[12]
+            self.rssi = self.rssi_byte >> 4
+
         self._set_strings()
 
     def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd):
         """Load data from individual data fields"""
-        self.packetlength = 0x08
+        self.packetlength = 0x0C
         self.packettype = 0x1a
         self.subtype = subtype
         self.seqnbr = seqnbr
@@ -2632,10 +2647,16 @@ class Rfy(Packet):
         self.id3 = id_combined & 0xff
         self.unitcode = unitcode
         self.cmnd = cmnd
+        self.rfu1 = 0
+        self.rfu2 = 0
+        self.rfu3 = 0
+        self.rssi_byte = 0
+        self.rssi = 0
         self.data = bytearray([self.packetlength, self.packettype,
                                self.subtype, self.seqnbr,
                                self.id1, self.id2, self.id3, self.unitcode,
-                               self.cmnd])
+                               self.cmnd, self.rfu1, self.rfu2, self.rfu3,
+                               self.rssi_byte])
 
         self._set_strings()
 

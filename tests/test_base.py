@@ -215,7 +215,7 @@ class CoreTestCase(TestCase):
                        0x79]
         event = core.transport.parse(bytes_array)
         self.assertEqual(RFXtrx.SensorEvent, type(event))
-        self.assertEqual(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='CARTELECTRONIC_TIC' id='77d200686'] values=[('Battery numeric', 0), ('Contract type', 17), ('Count', 0), ('Counter value', 3838665), ('Energy usage', 330), ('Rssi numeric', 0), ('Sensor Status', True)]")
+        self.assertEqual(event.__str__(),"<class 'RFXtrx.SensorEvent'> device=[<class 'RFXtrx.RFXtrxDevice'> type='CARTELECTRONIC_TIC' id='77d200686'] values=[('Battery numeric', 9), ('Contract type', 17), ('Count', 0), ('Counter value', 3838665), ('Energy usage', 330), ('Rssi numeric', 7), ('Sensor Status', True)]")
 
         #Cartelectronic Encoder
         bytes_array = [0x11, 0x60, 0x02, 0x5f, 0x3f, 0xfe, 0x61, 0xa3, 0x00, 0x00, 0x47, 0xd4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x69]
@@ -246,10 +246,10 @@ class CoreTestCase(TestCase):
         event.device.send_stop(core.transport)
 
         #Rfy
-        bytes_array = bytearray(b'\x08\x1A\x00\x00\x0A\x00\x01\x01\x03')
+        bytes_array = bytearray(b'\x0C\x1A\x00\x00\x0A\x00\x01\x01\x03\x00\x00\x00\x03')
         event= core.transport.receive(bytes_array)
         self.assertEqual(RFXtrx.ControlEvent, type(event))
-        self.assertEqual(event.__str__(),"<class 'RFXtrx.ControlEvent'> device=[<class 'RFXtrx.RfyDevice'> type='Rfy' id='0a0001:1'] values=[('Command', 'Down')]")
+        self.assertEqual(event.__str__(),"<class 'RFXtrx.ControlEvent'> device=[<class 'RFXtrx.RfyDevice'> type='Rfy' id='0a0001:1'] values=[('Command', 'Down'), ('Rssi numeric', 0)]")
         event.device.send_open(core.transport)
         event.device.send_close(core.transport)
         event.device.send_stop(core.transport)
